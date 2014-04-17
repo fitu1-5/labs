@@ -1,187 +1,167 @@
+// ConsoleApplication2.cpp: определяет точку входа для консольного приложения.
+//
+
 #include "stdafx.h"
+#include <stdlib.h>
+#include <iomanip>
 #include <iostream>
 #include <string>
-#include <conio.h>
+#include <vector>
 #include <windows.h>
+
 using namespace std;
+enum __gender{ male, female };
 
-class ZooMarket
-	{
-	public:
-		ZooMarket();
-		~ZooMarket(){}
+class animal {
+public:
+	animal::animal(string _animal, string _name, enum __gender _gender, int _price) {
+		animalType = _animal;
+		name = _name;
+		gender = _gender;
+		price = _price;
+	}
+	void animal::show() {
+		if (!deleted) {
+			cout << "Имя: \"" << name << "\" пол ";
+			if (gender == male) { cout << " муж."; }
+			else { cout << " жен."; }
+			cout << ", цена " << price << "р.\n";
+		}
+	}
+	void animal::del() {
+		deleted = true;
+	}
+	bool animal::isdel() {
+		if (deleted) return true;
+		return false;
+	}
+private:
+	enum __gender gender;
+	string animalType, name;
+	int price;
+	bool deleted = false;
+};
 
-		void store(string itsTitle, string itsMale, string itsNickname, int itsPrice, int itsAmount); 
-		void show(); 
-		string showName(); 
-		void changeAmount(); 
-		int amount(); 
+typedef struct zoo {
+	string animalType;
+	int count;
+	vector<animal> animals;
+} zoo;
 
-	private:
-		string itsTitle;
-		string itsMale; 
-		string itsNickname; 
-		int itsPrice; 
-		int itsAmount; 
-	} ;
-
-//применение конструктора
-ZooMarket::ZooMarket() {}
-
-void ZooMarket::store(string animalTitle, string animalMale, string animalNickname, int animalPrice, int animalAmount)
-{
-	itsTitle=animalTitle;
-	itsMale=animalMale;
-	itsNickname=animalNickname;
-	itsPrice=animalPrice;
-	itsAmount=animalAmount;
+void addAnimal(vector<zoo> &shop) {
+	string animalType, name, buffer;
+	char _price[100];
+	zoo zooelem;
+	__gender gender = male;
+	bool hasAnimal = false;
+	int posAnimal, price;
+	cout << "Введите тип животного: ";
+	cin >> animalType;
+	cout << "Введите имя животного: ";
+	cin >> name;
+	while (true) {
+		cout << "Пол животного:\n1. М\n2. Ж\n";
+		cin >> buffer;
+		if (buffer == "1") { break; }
+		else if (buffer == "2") {
+			gender = female;
+			break;
+		}
+		else {
+			cout << "Неверный ввод!\n";
+		}
+	}
+	cout << "Введите цену животного: ";
+	cin >> _price;
+	price = atoi(_price);
+	for (int i = 0; i < shop.size(); i++) {
+		if (shop[i].animalType == animalType) {
+			hasAnimal = true;
+			posAnimal = i;
+			break;
+		}
+	}
+	if (hasAnimal) {
+		shop[posAnimal].animals.push_back(animal(animalType, name, gender, price));
+		shop[posAnimal].count++;
+	}
+	else {
+		zooelem.animalType = animalType;
+		zooelem.count = 1;
+		zooelem.animals.push_back(animal(animalType, name, gender, price));
+		shop.push_back(zooelem);
+	}
 }
 
-void ZooMarket::show()
-{
-	cout<<"Показать название: "<<itsTitle<<endl<<"Пол: "<<itsMale<<endl<<"Кличка: "<<itsNickname<<endl<<"Цена: "<<itsPrice<<endl<<"Количество: "<<itsAmount<<endl;
+void showAnimal(vector<zoo> shop) {
+	for (int i = 0; i < shop.size(); i++) {
+		cout << shop[i].animalType << "\n============================\n"; 
+		for (int k = 0; k < shop[i].count; k++) {
+			if (!shop[i].animals[k].isdel()) shop[i].animals[k].show();
+		}
+	}
 }
 
-string ZooMarket::showName()
-{
-	return itsTitle;
+void showAnimalTypes(vector<zoo> shop) {
+	for (int i = 0; i < shop.size(); i++) {
+		cout << i+1 << ". " << shop[i].animalType << endl;
+	}
 }
 
-void ZooMarket::changeAmount()
-{
-	itsAmount=itsAmount-1;
+void showAnimalsInType(vector<zoo> shop, int el) {
+	for (int k = 0; k < shop[el].count; k++) {
+		cout << k + 1 << ". ";
+		if (!shop[el].animals[k].isdel()) shop[el].animals[k].show();;
+	}
 }
 
-int ZooMarket::amount()
-{
-	return itsAmount;
+void deleteAnimal(vector<zoo> &shop) {
+	int el, subel;
+	char buff[100];
+	cout << "Выберите номер списка:" << endl;
+	showAnimalTypes(shop);
+	cin >> buff;
+	el = atoi(buff);
+	if (el <= 0 || el > shop.size()) {
+		cout << "Нет такого элемента" << endl;
+		return;
+	}
+	showAnimalsInType(shop, --el);
+	cin >> buff;
+	subel = atoi(buff);
+	if (subel <= 0 || subel > shop[el].animals.size()) {
+		cout << "Нет такого элемента" << endl;
+		return;
+	}
+	shop[el].animals[subel - 1].del();
 }
-
-void CreationAnimal(int occupancy, ZooMarket AnimalArray[99]);
-void ShowAnimal(int occupancy, ZooMarket AnimalArray[99]);
-void ShowAllAnimal(int occupancy, ZooMarket AnimalArray[99]);
-void SellAnimal(int occupancy, ZooMarket AnimalArray[99]);
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//Включаем отображение русских символов
+	vector<zoo> shop;
+	int menu = 0;
+	char simb[10];
+
+	setlocale(LC_ALL, "RUS");
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 
-	//Создаем массив с животными
-	ZooMarket AnimalArray[99];
-
-	//текущий номер заполнения массива животных
-	int occupancy=1;
-
-	//меню
-	int choice;
-	do
-	{
-		system("cls");
-		cout<<"Выберите пункт меню:"<<endl<<"1. Ввод нового животного"<<endl<<"2. Показать данные о каком-либо животном"<<endl;
-		cout<<"3. Вывести всех животных на экран"<<endl<<"4. Продать животное"<<endl<<"5. Завершить работу программы"<<endl<<"Ваш выбор: ";
-		cin>>choice;
-		switch(choice)
-		{
-		case 1:	
-			CreationAnimal(occupancy, AnimalArray);
-			occupancy++;
-			break;
-		case 2:	
-			ShowAnimal(occupancy, AnimalArray);
-			break;
-		case 3:	
-			ShowAllAnimal(occupancy, AnimalArray);
-			break;
-		case 4:
-			SellAnimal(occupancy, AnimalArray);
-			break; //продать животное
-		case 5:	
-			cout<<"Вы покидаете матрицу и отправляетесь в реальную жизнь. Счастливого пути!"<<endl;
-			break;
-		default: 
-				cout<<"Вы ввели неизвестную команду. Пожалуйста, перечитайте пункты меню"<<endl;
-				system("PAUSE");
+	do {
+		cout << "Выберите пункт меню:" << endl;
+		cout << "1. Добавть животное" << endl;
+		cout << "2. Удлить животное" << endl;
+		cout << "3. Вывести животных" << endl;
+		cout << "4. Выход" << endl;
+		cin >> simb;
+		menu = atoi(simb);
+		switch (menu) {
+		case 1: { addAnimal(shop); break; }
+		case 2: { deleteAnimal(shop); break; }
+		case 3: { showAnimal(shop); break; }
 		}
-	}
-	while(choice!=5);
+	} while (menu != 4);
+
 	system("PAUSE");
 	return 0;
 }
 
-//Функция добавления нового животного в зоомагазина
-void CreationAnimal(int occupancy, ZooMarket AnimalArray[99])
-{
-	string crTitle;
-	string crMale;
-	string crNickname;
-	int crPrice;
-	int crAmount;
-	cout<<"Введите название животного: ";
-	cin>>crTitle;
-	cout<<"Введите пол: ";
-	cin>>crMale;
-	cout<<"Введите кличку: ";
-	cin>>crNickname;
-	cout<<"Введите цену: ";
-	cin>>crPrice;
-	cout<<"Введите количество: ";
-	cin>>crAmount;
-	AnimalArray[occupancy].store(crTitle, crMale, crNickname, crPrice, crAmount);
-}
-
-//Функция показа животного по номеру
-void ShowAnimal(int occupancy, ZooMarket AnimalArray[99])
-{
-	int numberAnimal;
-	cout<<"Введите номер животного: "<<endl;
-	cin>>numberAnimal;
-	if(numberAnimal<=0  || numberAnimal>=occupancy)
-		cout<<"По введенному номеру животные не найдены"<<endl;
-	else
-		AnimalArray[numberAnimal].show();
-	system("PAUSE");
-}
-
-//Функция для показа всех животных
-void ShowAllAnimal(int occupancy, ZooMarket AnimalArray[99])
-{
-	int i;
-	for(i=1; i<occupancy; i++)
-	{
-		AnimalArray[i].show();
-		cout<<"--------------------------"<<endl;
-	}
-	system("PAUSE");
-}
-
-//Функция продажи животного
-void SellAnimal(int occupancy, ZooMarket AnimalArray[99])
-{
-	string sellName;
-	cout<<"Введите название животного для продажи: "<<endl;
-	cin>>sellName;
-	int i;
-	for(i=1; i<(occupancy+1); i++)
-	{
-		if(sellName==AnimalArray[i].showName())
-		{
-			if((AnimalArray[i].amount())==0)
-			{
-				cout<<"Данного животного не в наличии!"<<endl;
-				system("PAUSE");
-				break;
-			}
-			cout<<"Животное найдено! Вы купили один экземпляр!"<<endl;
-			AnimalArray[i].changeAmount();
-			system("PAUSE");
-			break;
-		}
-		else if(i==occupancy)
-		{
-			cout<<"Животные с таким именем не найдены!"<<endl;
-			system("PAUSE");
-		}
-	}
-}
